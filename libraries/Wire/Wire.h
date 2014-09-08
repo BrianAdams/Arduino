@@ -60,12 +60,13 @@ class TwoWire : public Stream
     virtual size_t write(uint8_t);
     virtual size_t write(const uint8_t *, size_t);
     virtual int available(void);
+    float nackpercent(void);
     virtual int read(void);
     virtual int peek(void);
 	virtual void flush(void);
     void onReceive( void (*)(int) );
     void onRequest( void (*)(void) );
-  
+
     inline size_t write(unsigned long n) { return write((uint8_t)n); }
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
@@ -76,4 +77,3 @@ class TwoWire : public Stream
 extern TwoWire Wire;
 
 #endif
-
