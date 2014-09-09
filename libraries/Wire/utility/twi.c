@@ -95,6 +95,34 @@ void twi_init(void)
 }
 
 /*
+ * Function twi_nacks
+ * Desc     Returns the number of nacks since last check
+ * Input    none
+ * Output   none
+ */
+uint32_t twi_nacks(void)
+{
+  uint32_t i;
+  i = twi_nack_count;
+  twi_nack_count = 0;
+  return i;
+}
+
+/*
+ * Function twi_nacks
+ * Desc     Returns the number of nacks since last check
+ * Input    none
+ * Output   none
+ */
+uint32_t twi_acks(void)
+{
+  uint32_t i;
+  i = twi_ack_count;
+  twi_ack_count = 0;
+  return i;
+}
+
+/*
  * Function twi_slaveInit
  * Desc     sets slave address and enables interrupt
  * Input    none
