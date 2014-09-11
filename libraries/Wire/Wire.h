@@ -61,6 +61,7 @@ class TwoWire : public Stream
     virtual size_t write(const uint8_t *, size_t);
     virtual int available(void);
     float nackpercent(void);
+    uint8_t timeouts(void);
     virtual int read(void);
     virtual int peek(void);
 	virtual void flush(void);

@@ -62,7 +62,7 @@ static volatile uint8_t twi_error;
 volatile uint32_t twi_iter_count;
 volatile uint32_t twi_ack_count;
 volatile uint32_t twi_nack_count;
-
+volatile uint8_t twi_timeout_count;
 /*
  * Function twi_init
  * Desc     readys twi pins and sets twi bitrate
@@ -121,6 +121,15 @@ uint32_t twi_acks(void)
   twi_ack_count = 0;
   return i;
 }
+
+uint8_t twi_timeouts(void)
+{
+  uint8_t i;
+  i = twi_timeout_count;
+  twi_timeout_count = 0;
+  return i;
+}
+
 
 /*
  * Function twi_slaveInit
@@ -279,13 +288,16 @@ uint8_t twi_writeTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t wait
     continue;
   }
 
-  if (twi_error == 0xFF)
+  if (twi_error == 0xFF) {
+    twi_ack_count++;
     return 0;	// success
-  else if (twi_error == TW_MT_SLA_NACK)
+  } else if (twi_error == TW_MT_SLA_NACK) {
+    twi_nack_count++;
     return 2;	// error: address send, nack received
-  else if (twi_error == TW_MT_DATA_NACK)
+  } else if (twi_error == TW_MT_DATA_NACK) {
+    twi_nack_count++;
     return 3;	// error: data send, nack received
-  else
+  } else
     return 4;	// other twi error
 }
 
@@ -453,10 +465,11 @@ ISR(TWI_vect)
       // ack if more bytes are expected, otherwise nack
       if(twi_masterBufferIndex < twi_masterBufferLength){
         twi_reply(1);
+	twi_ack_count++;
       }else{
         twi_reply(0);
+	twi_ack_count++; //not an error, count as ack
       }
-      twi_ack_count++;
       break;
     case TW_MR_DATA_NACK: // data received, nack sent
       // put final byte into buffer
@@ -471,7 +484,7 @@ ISR(TWI_vect)
 	  TWCR = _BV(TWINT) | _BV(TWSTA)| _BV(TWEN) ;
 	  twi_state = TWI_READY;
 	}
-  twi_ack_count++;
+  	twi_nack_count++;
 	break;
     case TW_MR_SLA_NACK: // address sent, nack received
       twi_stop();
@@ -517,6 +530,7 @@ ISR(TWI_vect)
       twi_rxBufferIndex = 0;
       // ack future responses and leave slave receiver state
       twi_releaseBus();
+      twi_ack_count++;
       break;
     case TW_SR_DATA_NACK:       // data received, returned nack
     case TW_SR_GCALL_DATA_NACK: // data received generally, returned nack
@@ -549,10 +563,11 @@ ISR(TWI_vect)
       // if there is more to send, ack, otherwise nack
       if(twi_txBufferIndex < twi_txBufferLength){
         twi_reply(1);
+	twi_ack_count++;
       }else{
         twi_reply(0);
+	twi_ack_count++; //not an error, treat as ack
       }
-      twi_ack_count++;
       break;
     case TW_ST_DATA_NACK: // received nack, we are done
     case TW_ST_LAST_DATA: // received ack, but we are done already!
@@ -560,7 +575,7 @@ ISR(TWI_vect)
       twi_reply(1);
       // leave slave receiver state
       twi_state = TWI_READY;
-      twi_nack_count++;
+      twi_ack_count++;
       break;
 
     // All
@@ -582,6 +597,7 @@ uint8_t twi_timeout_guard(uint8_t init)
     twi_iter_count++;
     if(twi_iter_count > TWI_MAX_ITERS)
     {
+      twi_timeout_count++;
       twi_init();
       TWCR = 0;
       return 1;

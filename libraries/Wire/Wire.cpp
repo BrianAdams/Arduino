@@ -208,7 +208,11 @@ int TwoWire::available(void)
 float TwoWire::nackpercent(void){
   uint32_t a = twi_acks();
   uint32_t n = twi_nacks();
-  return n/(a+n);
+  return ((float)n/(n+a))*100.0;
+}
+
+uint8_t TwoWire::timeouts(void){
+  return twi_timeouts();
 }
 
 // must be called in:

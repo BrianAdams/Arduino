@@ -53,5 +53,5 @@
   uint8_t twi_timeout_guard(uint8_t);
   uint32_t twi_nacks(void);
   uint32_t twi_acks(void);
-
+  uint8_t twi_timeouts(void);
 #endif
